@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>同人コミック 今日の40選</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--sub:#6b6b70;--line:#e4e2dc;--acc:#c2185b;--ok:#2e7d32}
+@media(prefers-color-scheme:dark){:root{--bg:#141416;--card:#1f1f23;--ink:#f2f2f4;--sub:#9a9aa2;--line:#2e2e34;--acc:#ff6fa5;--ok:#7bd88f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,"Hiragino Sans",sans-serif;padding:0 16px 48px}
+header,main{max-width:760px;margin:0 auto}
+header{padding:20px 0 8px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--sub);font-size:13px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.chip{border-radius:99px;padding:6px 14px;font-size:14px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:8px 0}
+summary{font-weight:600}
+label{display:block;font-size:13px;color:var(--sub);margin-top:10px}
+input{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center}.row span{color:var(--sub)}
+.msg{padding:10px 14px;border-radius:10px;margin:8px 0;font-size:13px;background:var(--card);border:1px solid var(--line)}
+.msg.err{border-color:var(--acc);color:var(--acc)}
+.item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
+.item img{width:84px;height:118px;object-fit:cover;border-radius:6px;flex:none;background:var(--line)}
+.no{font-weight:700;color:var(--acc);font-size:13px}
+.title{font-weight:600;font-size:14px;margin:2px 0;display:block;color:var(--ink);text-decoration:none}
+.meta{font-size:12px;color:var(--sub)}
+.score{display:inline-block;font-weight:700;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--acc);color:#fff;margin-right:6px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;border:1px solid var(--line);margin:3px 4px 0 0}
+.tag.new{border-color:var(--ok);color:var(--ok)}
+.tag.sale{border-color:var(--acc);color:var(--acc)}
+.why{font-size:12px;color:var(--sub);margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>同人コミック 今日の40選</h1>
+  <div class="sub" id="stamp">読み込み中…</div>
+</header>
+<main>
+  <div class="chips" id="chips"></div>
+  <div class="bar">
+    <button class="primary" id="reload">このテーマで40件を取得</button>
+    <button id="copy">リストをコピー</button>
+    <button id="demo">デモ表示</button>
+  </div>
+
+  <details id="settings">
+    <summary>設定(初回だけ入力)</summary>
+    <label>API ID(DMMアフィリエイトの「API利用」で発行)</label>
+    <input id="apiId" autocomplete="off">
+    <label>アフィリエイトID(API用・末尾が990〜999のもの)</label>
+    <input id="affId" autocomplete="off" placeholder="例: xxxxx-990">
+    <label>ジャンル名(この種類だけから選びます・空欄で絞り込みなし)</label>
+    <input id="genreKw" value="コミック">
+    <label>テーマのボタン(カンマ区切り。同じ意味の言葉は + でつなぐ)</label>
+    <input id="themes" placeholder="熟女,主婦,人妻,寝取られ+NTR,学生,妹,姉,弟,兄">
+    <label>価格の範囲(円・空欄で指定なし)</label>
+    <div class="row"><input id="minPrice" inputmode="numeric" placeholder="最低 例: 300"><span>〜</span><input id="maxPrice" inputmode="numeric" placeholder="最高 例: 1000"></div>
+    <label>除外ワード(タイトル・ジャンルに含まれたら除外)</label>
+    <input id="ngKw" placeholder="例: ボイス,ASMR">
+    <div class="bar"><button id="save">保存して取得</button></div>
+    <div class="sub">設定はこの端末のブラウザにだけ保存されます。</div>
+  </details>
+
+  <div id="status"></div>
+  <div id="list"></div>
+
+  <details>
+    <summary>選び方(スコア100点満点)</summary>
+    <div class="sub" style="margin-top:8px">
+      ランキング順位 40点 / レビュー(件数×評価) 20点 / 新しさ 15点 / セール率 15点 / 新作かつランキング入りの勢い 10点。<br>
+      テーマを選ぶと、そのキーワードで検索した結果のランキングから選びます。売上数そのものはAPIで取れないため、「今売れている兆候」を点数化した目安です。
+    </div>
+  </details>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : v }catch(e){ return d } },
+  set(k, v){ try{ localStorage.setItem(k, v) }catch(e){} }
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10); // JST
+const TOP = 40;
+const THEME_DEFAULT = '熟女,主婦,人妻,寝取られ+NTR,学生,妹,姉,弟,兄';
+const SETTING_KEYS = ['apiId','affId','genreKw','themes','minPrice','maxPrice','ngKw'];
+
+let picks = [];
+let current = LS.get('theme', 'すべて');
+
+function themeList(){
+  const raw = LS.get('themes', '') || THEME_DEFAULT;
+  const list = raw.split(/[,、]/).map(s => s.trim()).filter(Boolean).map(t => {
+    const kws = t.split('+').map(x => x.trim()).filter(Boolean);
+    return { label: kws.join('・'), kws };
+  });
+  return [{ label:'すべて', kws:[] }, ...list];
+}
+function themeOf(label){ return themeList().find(t => t.label === label) || themeList()[0] }
+
+function renderChips(){
+  const labels = themeList().map(t => t.label);
+  if(!labels.includes(current)) current = 'すべて';
+  $('chips').innerHTML = labels.map(l => `<button class="chip${l===current?' on':''}" data-t="${esc(l)}">${esc(l)}</button>`).join('');
+  document.querySelectorAll ? document.querySelectorAll('#chips .chip').forEach(b => b.onclick = () => pick(b.dataset.t)) : 0;
+}
+
+function note(t, err){ $('status').innerHTML = t ? `<div class="msg${err?' err':''}">${esc(t)}</div>` : ''; }
+
+function loadSettings(){
+  SETTING_KEYS.forEach(k => { $(k).value = LS.get(k, k === 'genreKw' ? 'コミック' : '') });
+  if(!$('themes').value) $('themes').value = '';
+}
+$('save').onclick = () => {
+  SETTING_KEYS.forEach(k => LS.set(k, $(k).value.trim()));
+  renderChips();
+  if(LS.get('apiId','') && LS.get('affId','')) run(); else note('保存しました');
+};
+
+async function api(path, extra){
+  const p = new URLSearchParams({ api_id: LS.get('apiId',''), affiliate_id: LS.get('affId',''), output:'json', ...extra });
+  const r = await fetch('https://api.dmm.com/affiliate/v3/' + path + '?' + p);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if(j.result?.status && String(j.result.status) !== '200') throw new Error(j.result.message || 'APIエラー');
+  return j.result || {};
+}
+
+async function fetchItems(sort, hits, genreId, keyword){
+  const extra = { site:'FANZA', service:'doujin', floor:'digital_doujin', hits:String(hits), sort };
+  if(genreId){ extra.article = 'genre'; extra.article_id = String(genreId) }
+  if(keyword) extra.keyword = keyword;
+  return (await api('ItemList', extra)).items || [];
+}
+
+// ジャンル名からFANZA同人フロアのジャンルIDを探す(見つかったIDは端末に保存)
+async function findGenre(name){
+  const key = 'genreId:' + name;
+  const saved = LS.get(key, '');
+  if(saved) return { id: saved, name };
+  const fl = await api('FloorList', {});
+  let floor = null;
+  for(const site of (fl.site || [])) for(const sv of (site.service || [])) for(const f of (sv.floor || [])){
+    if(f.code === 'digital_doujin') floor = f;
+  }
+  if(!floor) throw new Error('同人フロアが見つかりません');
+  const gl = await api('GenreList', { floor_id: String(floor.id ?? floor.floor_id), hits:'500' });
+  const genres = gl.genre || [];
+  const hit = genres.find(g => g.name === name) || genres.find(g => (g.name || '').includes(name));
+  if(!hit) return { none: true, names: genres.map(g => g.name).filter(Boolean) };
+  LS.set(key, String(hit.genre_id));
+  return { id: String(hit.genre_id), name: hit.name };
+}
+
+function num(x){ const n = parseInt(String(x ?? '').replace(/[^\d]/g,''),10); return isNaN(n) ? 0 : n }
+
+function score(it, rankIdx, inNew){
+  const why = [];
+  const rank = rankIdx >= 0 ? 40 * Math.max(0, 1 - rankIdx / 100) : 0;
+  if(rankIdx >= 0) why.push(`ランキング${rankIdx+1}位`);
+  const cnt = it.review?.count || 0, avg = parseFloat(it.review?.average) || 0;
+  const rev = 20 * Math.min(1, Math.log10(1 + cnt) / 2) * (avg ? avg / 5 : 0.6);
+  if(cnt) why.push(`レビュー${cnt}件 ★${avg}`);
+  const days = it.date ? (Date.now() - new Date(it.date.replace(' ','T') + '+09:00')) / 864e5 : 999;
+  const fresh = days <= 7 ? 15 : days <= 30 ? 10 : days <= 90 ? 5 : 0;
+  if(days <= 30) why.push(`配信${Math.max(0,Math.floor(days))}日目`);
+  const price = num(it.prices?.price), list = num(it.prices?.list_price);
+  const off = list > price && price > 0 ? Math.round((1 - price / list) * 100) : 0;
+  const sale = 15 * Math.min(1, off / 50);
+  if(off) why.push(`${off}%OFF`);
+  const mom = (inNew && rankIdx >= 0) ? 10 : 0;
+  if(mom) why.push('新作でランクイン');
+  return { total: Math.round(rank + rev + fresh + sale + mom), why, off, isNew: days <= 14 };
+}
+
+// 同義語キーワードごとの結果を1つにまとめる(各作品の最良順位を __r に持たせる)
+function mergeRank(lists){
+  const out = [], seen = new Set();
+  const max = Math.max(0, ...lists.map(l => l.length));
+  for(let i = 0; i < max; i++) for(const l of lists){
+    const it = l[i];
+    if(it && !seen.has(it.content_id)){ seen.add(it.content_id); out.push({ ...it, __r: i }) }
+  }
+  return out;
+}
+function mergeNew(lists){
+  const out = [], seen = new Set();
+  for(const l of lists) for(const it of l) if(!seen.has(it.content_id)){ seen.add(it.content_id); out.push(it) }
+  return out;
+}
+
+function select(rankItems, newItems, genreHit){
+  const genreKw = genreHit ? [] : LS.get('genreKw','コミック').split(',').map(s=>s.trim()).filter(Boolean);
+  const ngKw = LS.get('ngKw','').split(',').map(s=>s.trim()).filter(Boolean);
+  const minP = num(LS.get('minPrice','')), maxP = num(LS.get('maxPrice',''));
+  const inRange = it => { const p = num(it.prices?.price); return (!minP || p >= minP) && (!maxP || p <= maxP) };
+  const map = new Map();
+  rankItems.forEach((it,i) => map.set(it.content_id, {it, r: it.__r ?? i, n:false}));
+  newItems.forEach(it => { const e = map.get(it.content_id); if(e) e.n = true; else map.set(it.content_id, {it, r:-1, n:true}) });
+  const gtxt = it => (it.iteminfo?.genre || []).map(g=>g.name).join(' ');
+  let all = [...map.values()].filter(e => !ngKw.some(k => (e.it.title + ' ' + gtxt(e.it)).includes(k)) && inRange(e.it));
+  let filtered = genreKw.length ? all.filter(e => genreKw.some(k => gtxt(e.it).includes(k) || e.it.title.includes(k))) : all;
+  let fallback = false;
+  if(genreKw.length && filtered.length < TOP){ fallback = all.length > filtered.length; filtered = all }
+  const scored = filtered.map(e => ({ it:e.it, s:score(e.it, e.r, e.n) })).sort((a,b) => b.s.total - a.s.total);
+  return { list: scored.slice(0,TOP), fallback };
+}
+
+const slim = it => ({ content_id: it.content_id, title: it.title, URL: it.URL, affiliateURL: it.affiliateURL,
+  imageURL: { list: it.imageURL?.list || '', large: it.imageURL?.large || '' }, prices: it.prices,
+  iteminfo: { maker: (it.iteminfo?.maker || []).slice(0,1) } });
+
+function readJSON(k, d){ try{ const v = JSON.parse(LS.get(k, 'null')); return v ?? d }catch(e){ return d } }
+
+function render(label){
+  const prev = readJSON('prev', {})[label] || [];
+  $('list').innerHTML = picks.map((p,i) => {
+    const it = p.it, isNewPick = prev.length && !prev.includes(it.content_id);
+    const img = it.imageURL?.list || it.imageURL?.large || '';
+    const maker = it.iteminfo?.maker?.[0]?.name || '';
+    return `<div class="item">
+      <img src="${esc(img)}" alt="" loading="lazy">
+      <div>
+        <div class="no">${i+1}位</div>
+        <a class="title" href="${esc(it.affiliateURL || it.URL)}" target="_blank" rel="noopener">${esc(it.title)}</a>
+        <div class="meta"><span class="score">${p.s.total}点</span>${esc(maker)} / ${esc(it.prices?.price || '')}円</div>
+        <div>${isNewPick?'<span class="tag new">昨日から新登場</span>':''}${p.s.off?`<span class="tag sale">${p.s.off}%OFF</span>`:''}${p.s.isNew?'<span class="tag new">新作</span>':''}</div>
+        <div class="why">${esc(p.s.why.join(' ・ '))}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function saveCache(label, entry){
+  let c = readJSON('cache', null), prev = readJSON('prev', {});
+  if(c && c.date !== today()){
+    for(const [k,v] of Object.entries(c.themes || {})) prev[k] = v.picks.map(p => p.it.content_id);
+    LS.set('prev', JSON.stringify(prev)); c = null;
+  }
+  c = c || { date: today(), themes: {} };
+  c.themes[label] = entry;
+  LS.set('cache', JSON.stringify(c));
+}
+
+function pick(label){
+  current = label; LS.set('theme', label); renderChips();
+  const c = readJSON('cache', null);
+  const hit = c && c.date === today() && c.themes[label];
+  if(hit){ picks = hit.picks; render(label); $('stamp').textContent = `${c.date} の40件(保存済み)/ ${hit.desc}`; note('') }
+  else if(LS.get('apiId','') && LS.get('affId','')) return run();
+  else { picks = []; render(label); $('stamp').textContent = '設定を入力すると今日の40件を取得します'; $('settings').open = true }
+}
+
+async function run(){
+  const label = current, th = themeOf(label);
+  note('取得中…');
+  try{
+    if(!LS.get('apiId','') || !LS.get('affId','')){ $('settings').open = true; throw new Error('先に設定でAPI IDとアフィリエイトIDを入力して保存してください') }
+    const gname = LS.get('genreKw','コミック').split(',')[0].trim();
+    let genreId = '', genreMsg = '';
+    if(gname){
+      try{
+        const g = await findGenre(gname);
+        if(g.none) genreMsg = `ジャンル「${gname}」がFANZA同人のジャンル一覧に見つかりません。設定のジャンル名を、次のどれかに合わせてください: ` + g.names.slice(0,40).join(' / ');
+        else genreId = g.id;
+      }catch(e){ genreMsg = 'ジャンルの検索に失敗したため、タイトルとジャンル名の文字で絞り込みました(' + e.message + ')' }
+    }
+    const kws = th.kws.length ? th.kws : [''];
+    const res = await Promise.all(kws.flatMap(kw => [fetchItems('rank',100,genreId,kw), fetchItems('date',100,genreId,kw)]));
+    const rank = mergeRank(res.filter((_,i) => i % 2 === 0));
+    const nw = mergeNew(res.filter((_,i) => i % 2 === 1));
+    const { list, fallback } = select(rank, nw, !!genreId);
+    const desc = (genreId ? `「${gname}」` : '') + (th.kws.length ? `×「${label}」` : '') + `上位${rank.length}件から選出`;
+    if(label !== current) return; // 取得中に別のテーマへ切り替えた場合は表示を変えない
+    picks = list; render(label);
+    saveCache(label, { picks: list.map(p => ({ it: slim(p.it), s: p.s })), desc });
+    $('stamp').textContent = `${today()} 更新 / ${desc}`;
+    const msgs = genreMsg ? [genreMsg] : [];
+    if(fallback) msgs.push('ジャンル絞り込みで40件に届かなかったため、ジャンルの絞り込みなしで選びました。設定のジャンル名を見直してください。');
+    if(list.length < TOP) msgs.push(`条件に合う作品が${list.length}件でした。価格の範囲やテーマを広げると増えます。`);
+    note(msgs.join(' '));
+  }catch(e){
+    note('取得に失敗しました: ' + e.message + '(ブラウザからの直接取得が拒否される場合があります。その場合は別の方法に切り替えるので教えてください)', true);
+  }
+}
+
+$('reload').onclick = () => run();
+$('demo').onclick = () => {
+  const mk = i => ({ content_id:'demo'+i, title:`サンプル作品${i}(デモ)`, affiliateURL:'#', imageURL:{}, date:'2026-10-0'+(1+i%8)+' 00:00:00',
+    prices:{price:String(330+i*10), list_price:'660'}, review:{count:i*3, average:(4+(i%10)/10).toFixed(2)}, iteminfo:{maker:[{name:'サークル'+i}], genre:[{name:'コミック'}]} });
+  picks = Array.from({length:TOP},(_,i)=>mk(i+1)).map((it,i)=>({it, s:score(it,i,i%3===0)}));
+  $('stamp').textContent = 'デモ表示(実データではありません)'; render(current); note('');
+};
+$('copy').onclick = async () => {
+  const t = picks.map((p,i) => `${i+1}. ${p.it.title}(${p.s.total}点)\n${p.it.affiliateURL || p.it.URL}`).join('\n\n');
+  try{ await navigator.clipboard.writeText(t); note('コピーしました') }catch(e){ note('コピーできませんでした', true) }
+};
+
+loadSettings();
+renderChips();
+pick(current);
+</script>
+</body>
+</html>
